@@ -284,14 +284,14 @@ Server.prototype.start_server = function (cpid, options, s_callback) {
 Server.prototype.kill_server = function (cpid, spid, k_callback) {
 	var that = this;//k_callback(null, true);
 	try {
-		/* g.srv[cpid][spid]['stdout_stream'].close();
+		g.srv[cpid][spid]['stdout_stream'].close();
 		g.srv[cpid][spid]['stdout_stream'].destroySoon();
 		g.srv[cpid][spid]['stderr_stream'].close();
 		g.srv[cpid][spid]['stderr_stream'].destroySoon();
 		g.srv[cpid][spid]['server'].kill('SIGKILL');
 		if (debug_mode) {
 			log.notice(g.srv[cpid][spid]['name'] + ':Redis Server killed on socket : ' + g.srv[cpid][spid]['host'] + ':' + g.srv[cpid][spid]['port']);
-		} */
+		} 
 		delete g.srv[cpid][spid];
 		setTimeout(function () {
 			k_callback(null, true);

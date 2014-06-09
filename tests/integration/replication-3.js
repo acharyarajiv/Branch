@@ -34,6 +34,7 @@ exports.Replication3 = (function () {
 		testEmitter.on('start', function () {
 			var tags = 'repl-3';
 			var overrides = {};
+			overrides['maxheap'] = '1gb';
 			var args = {};
 			args['name'] = name + '(Master)';
 			args['tags'] = tags;
@@ -49,6 +50,7 @@ exports.Replication3 = (function () {
 					master_port = g.srv[client_pid][server_pid]['port'];
 					var tags = 'repl';
 					var overrides = {};
+					overrides['maxheap'] = '512mb';
 					var args = {};
 					args['name'] = name + '(Slave0)';
 					args['tags'] = tags;
@@ -153,6 +155,7 @@ exports.Replication3 = (function () {
 							if (err) {
 								errorCallback(err);
 							}
+							setTimeout(function () {
 							slave_cli.debug('digest', function (err, digest0) {
 								if (err) {
 									errorCallback(err);
@@ -179,6 +182,7 @@ exports.Replication3 = (function () {
 									});
 								}
 							});
+							}, 1000);
 						});
 					}, 1000);
 				});

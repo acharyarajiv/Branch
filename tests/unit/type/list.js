@@ -87,7 +87,8 @@ exports.List = (function () {
 			});
 		});
 		testEmitter.on('next', function () {
-			var test_case_name = all_tests.shift()
+			setTimeout(function(){
+				var test_case_name = all_tests.shift()
 				if (test_case_name) {
 					tester[test_case_name](function (error) {
 						ut.fail(error);
@@ -103,6 +104,7 @@ exports.List = (function () {
 					}
 					testEmitter.emit('end');
 				}
+			},1000);
 		});
 		testEmitter.on('end', function () {
 			server.kill_server(client_pid, server_pid, function (err, res) {
@@ -1134,21 +1136,19 @@ exports.List = (function () {
 				}
 				result_array.push(res);
 			});
-			setTimeout(function () {
-				cli.rpush('blist', 'foo', function (err, res) {
+			cli.rpush('blist', 'foo', function (err, res) {
+				if (err) {
+					errorCallback(err);
+				}
+				cli.exists('target', function (err, res) {
 					if (err) {
 						errorCallback(err);
 					}
-					cli.exists('target', function (err, res) {
-						if (err) {
-							errorCallback(err);
-						}
-						result_array.push(res);
-						ut.assertDeepEqual(result_array, ['foo', ['target', 'foo'], 0], test_case);
-						testEmitter.emit('next');
-					});
+					result_array.push(res);
+					ut.assertDeepEqual(result_array, ['foo', ['target', 'foo'], 0], test_case);
+					testEmitter.emit('next');
 				});
-			}, 1000);
+			});
 		});
 	};
 	tester.List17 = function (errorCallback) {
@@ -1252,17 +1252,20 @@ exports.List = (function () {
 				cli.lpush('blist', 'foo', function (err, res) {
 					cli.lrange('target2', 0, -1, function (err, res1) {
 						result_array.push(res1[0]);
-						ut.assertMany(
+						setTimeout(function(){
+							ut.assertMany(
 							[	
 								['ok', 'wrong kind', error],
 								['deepequal', result_array, ['foo', 'foo']]
 							],test_case);
-						testEmitter.emit('next');
+							testEmitter.emit('next');
+						},1000);
 					});
 				});
 			});
 		});
 	};
+	
 	tester.List20 = function (errorCallback) {
 		var test_case = 'Linked BRPOPLPUSH';
 		var result_array = new Array();

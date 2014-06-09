@@ -53,7 +53,8 @@ exports.Quit = (function () {
 			});
 		});
 		testEmitter.on('next', function () {
-			var test_case_name = all_tests.shift()
+			setTimeout(function(){
+				var test_case_name = all_tests.shift();
 				if (test_case_name) {
 					tester[test_case_name](function (error) {
 						ut.fail(error);
@@ -62,6 +63,7 @@ exports.Quit = (function () {
 				} else {
 					testEmitter.emit('end');
 				}
+			},ut.timeout);
 		});
 		testEmitter.on('end', function () {
 			server.kill_server(client_pid, server_pid, function (err, res) {
@@ -90,7 +92,7 @@ exports.Quit = (function () {
 			if (quit.debug_mode) {
 				log.notice(name + ':Client connected  and listening on socket : ' + g.srv[client_pid][server_pid]['host'] + ':' + g.srv[client_pid][server_pid]['port']);
 			}
-			client.write(ut.formatCommand(['quit']), function (err, result) {
+			client.quit(function (err, result) {
 				if (err) {
 					errorCallback(err);
 				}
@@ -121,14 +123,14 @@ exports.Quit = (function () {
 			if (quit.debug_mode) {
 				log.notice(name + ':Client connected  and listening on socket : ' + g.srv[client_pid][server_pid]['host'] + ':' + g.srv[client_pid][server_pid]['port']);
 			}
-			client.write(ut.formatCommand(['quit']), function (err, result) {
+			client.quit(function (err, result) {
 				if (err) {
 					errorCallback(err);
 				}
 				if (quit.debug_mode) {
 					log.notice(name + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid]['host'] + ':' + g.srv[client_pid][server_pid]['port']);
 				}
-				client.write(ut.formatCommand(['set', 'foo', 'bar']), function (error, res2) {
+				client.set('foo', 'bar', function (error, res2) {
 					if (err) {
 						errorCallback(err);
 					}
@@ -160,6 +162,7 @@ exports.Quit = (function () {
 			});
 		});
 	};
+	
 	tester.quit3 = function (errorCallback) {
 		var test_case = 'Pipelined commands after QUIT that exceed read buffer size';
 		ut.reconnect(redis, client_pid, server_pid, function (err, client) {
@@ -169,14 +172,14 @@ exports.Quit = (function () {
 			if (quit.debug_mode) {
 				log.notice(name + ':Client connected  and listening on socket : ' + g.srv[client_pid][server_pid]['host'] + ':' + g.srv[client_pid][server_pid]['port']);
 			}
-			client.write(ut.formatCommand(['quit']), function (err, result) {
+			client.quit(function (err, result) {
 				if (err) {
 					errorCallback(err);
 				}
 				if (quit.debug_mode) {
 					log.notice(name + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid]['host'] + ':' + g.srv[client_pid][server_pid]['port']);
 				}
-				client.write(ut.formatCommand(['set', 'foo', g.fillString(1000, 'x')]), function (error, res2) {
+				client.set('foo', g.fillString(1000, 'x'), function (error, res2) {
 					if (err) {
 						errorCallback(err);
 					}

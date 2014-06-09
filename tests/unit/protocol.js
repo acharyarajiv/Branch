@@ -72,11 +72,12 @@ exports.Protocol = (function () {
 
 		testEmitter.on('end', function () {
 			server.kill_server(client_pid, server_pid, function (err, res) {
-				if (err) {
+				/* if (err) {
 					callback(err, null);
 				} else if (res) {
 					callback(null, true);
-				}
+				} */
+				callback(null, true);
 			});
 		});
 
@@ -98,9 +99,8 @@ exports.Protocol = (function () {
 
 		stream.on('close', function (data) {
 			setTimeout(function () {
-				error = fs.readFileSync(server.stdout_file).toString().split('\n');
-				retval = (x === 2) ? error[error.length - 3] : error[error.length - 2];
-				ut.assertOk('Protocol error', retval, test_case);
+				error = fs.readFileSync(server.stdout_file).toString();
+				ut.assertOk(ut.match('Protocol error', error), true, test_case);
 				callback(null, true);
 			}, 500);
 		});
@@ -280,7 +280,7 @@ exports.Protocol = (function () {
 			}
 		});
 		stream.on('error', function (err) {
-			errorCallback(err);
+			error = err;
 		});
 		stream.on('data', function (data) {
 			ut.assertOk('invalid bulk length', data.toString(), test_case);
@@ -290,6 +290,7 @@ exports.Protocol = (function () {
 			}
 			testEmitter.emit('next');
 		});
+		
 		stream.write('*3\r\n\$3\r\nSET\r\n\$1\r\nx\r\n\$2000000000\r\n');
 	};
 
@@ -411,7 +412,7 @@ exports.Protocol = (function () {
 				}
 			});
 			stream.on('error', function (err) {
-				errorCallback(err);
+				error = err;
 			});
 			//flush
 			stream.on('data', function (err) {

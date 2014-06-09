@@ -22,6 +22,8 @@ var async = require('async');
 
 function Utility() {}
 
+Utility.prototype.timeout = 0;
+
 Utility.prototype.pass = function (msg, debug, logging) {
 	if (debug === undefined) {
 		debug = false;

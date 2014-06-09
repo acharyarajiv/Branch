@@ -174,7 +174,8 @@ exports.Bitops = (function () {
 			});
 		});
 		testEmitter.on('next', function () {
-			var test_case_name = all_tests.shift()
+			setTimeout(function(){
+				var test_case_name = all_tests.shift()
 				if (test_case_name) {
 					tester[test_case_name](function (error) {
 						ut.fail(error);
@@ -187,6 +188,7 @@ exports.Bitops = (function () {
 					}
 					testEmitter.emit('end');
 				}
+			},ut.timeout);
 		});
 		if (bitops.debug_mode) {
 			server.set_debug_mode(true);

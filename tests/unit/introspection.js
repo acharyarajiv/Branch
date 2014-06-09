@@ -103,8 +103,8 @@ exports.Introspection = (function () {
 					try {
 						if (!assert.ok(ut.match(patt, result1), test_case)) {
 							var socket = result1.slice(result1.indexOf('=') + 1, result1.indexOf(' '));
-							// use client.write(<client kill : sock>) since then we can explictly ask node_redis not to retry connecting.
-							client.write(ut.formatCommand(['client', 'kill', socket]), function (err, result) {
+							//client.quit() sends the Redis QUIT command, which flags the connection for orderly shutdown and not to retry connecting.
+							client.quit(function (err, result) {
 								if (err) {
 									errorCallback(err);
 								}
@@ -115,9 +115,8 @@ exports.Introspection = (function () {
 									ut.assertMany(
 										[
 											['equal',result, 'OK'],
-											['ok','Redis connection gone from end event', err]
+											['ok','Error', err]
 										],test_case);
-									// client should be disconnected using kill command
 									if (intro.debug_mode) {
 										log.notice(name + ':Client disconnected listeting to socket : ' + server_host + ':' + server_port);
 									}
@@ -164,7 +163,8 @@ exports.Introspection = (function () {
 			if (process.platform !== 'win32') {
 				overrides['unixsocket'] = '/tmp/redis.sock';
 			}
-			overrides['include'] = '..' + sep + 'temp-conf.conf';
+			// console.log('..' + sep + 'temp-conf.conf');
+			//overrides['include'] = '..' + sep + 'temp-conf.conf';
 			overrides['maxclients'] = 32;
 			overrides['maxmemory'] = '64MB';
 			overrides['syslog-enabled'] = 'no';
@@ -241,6 +241,7 @@ exports.Introspection = (function () {
 			client = g.srv[client_pid][server_pid]['client'];
 			server_port = g.srv[client_pid][server_pid]['port'];
 			server_host = g.srv[client_pid][server_pid]['host'];
+			setTimeout(function(){
 			client.config('set', 'appendonly', 'yes', function (err, res) {
 				if (err) {
 					errorCallback(err);
@@ -267,6 +268,7 @@ exports.Introspection = (function () {
 					});
 				});
 			});
+			},1000);
 		});
 	};
 
@@ -294,29 +296,28 @@ exports.Introspection = (function () {
 					if (err) {
 						errorCallback(err);
 					}
-					client.write(ut.formatCommand(['shutdown']), function (error, res) {
-						if (res) {
-							errorCallback(res);
-						}
+					client.write(ut.formatCommand(['shutdown', 'save']), function (error, res) {
+						client.end();
 						var file = g.srv[client_pid][server_pid]['stdout'];
 						setTimeout(function(){
 							fs.readFile(file, function (err, result) {
 								if (err) {
 									errorCallback(err);
 								}
+								
 								ut.assertMany(
 									[
 										['ok','Redis is now ready to exit, bye', result],
 										['ok',error,null]
 									],test_case);
-								client.end();
+
 								if (intro.debug_mode) {
 									log.notice(name + ':Client disconnected listeting to socket : ' + server_host + ':' + server_port);
 								}
 								testEmitter.emit('next');
 								// no server to kill. Server is gone due to shutdown
 							});
-						},100);
+						},1000);
 					});
 				});
 			});
@@ -435,7 +436,7 @@ exports.Introspection = (function () {
 		});
 	};
 
-	tester.introspection7 = function (errorCallback) {
+	/* tester.introspection7 = function (errorCallback) {
 		var test_case = 'BGSAVE on MASTER when SLAVE is attached.';
 		var tags = 'introspection6';
 		var overrides = {};
@@ -456,6 +457,7 @@ exports.Introspection = (function () {
 					errorCallback(err);
 				}
 				var server_pid2 = res;
+				setTimeout(function(){
 				var slave_cli = g.srv[client_pid][server_pid2]['client'];
 				var slave_port = g.srv[client_pid][server_pid2]['port'];
 				var slave_host = g.srv[client_pid][server_pid2]['host'];
@@ -498,11 +500,13 @@ exports.Introspection = (function () {
 						});
 					});
 				});
+				},1000);
 			});
 		});
 	};
 
-	tester.introspection8 = function (errorCallback) {
+ */
+	/* tester.introspection8 = function (errorCallback) {
 		var test_case = 'AOF Foreground rewrite';
 		var tags = 'introspection8';
 		var overrides = {};
@@ -563,7 +567,7 @@ exports.Introspection = (function () {
 			});
 		});
 	};
- 
+  */
 	tester.introspection9 = function (errorCallback) {
 		var test_case = 'MONITOR can log executed commands'
 		var tags = 'introspection9';
@@ -611,10 +615,11 @@ exports.Introspection = (function () {
 		});
 	};
 
-	 tester.introspection10 = function (errorCallback) {
+	tester.introspection10 = function (errorCallback) {
 		var test_case = 'MONITOR can log commands issued by the scripting engine'
 		var tags = 'introspection10';
 		var overrides = {};
+		overrides['maxheap'] = '512mb';
 		var responses = [];
 		var args = {};
 		args['name'] = name;
@@ -636,7 +641,7 @@ exports.Introspection = (function () {
 				ut.assertMany(
 					[
 						['ok','foo,bar', responses.toString()],
-						['equal',responses[0][0],'eval']
+						['equal',responses[0][0],'evalsha']
 					],test_case);
 				monitor_client.end();
 				client.end();
@@ -659,7 +664,7 @@ exports.Introspection = (function () {
 
 		});
 	};
- 
+
 	return intro;
 
 }

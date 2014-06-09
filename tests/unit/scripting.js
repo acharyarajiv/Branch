@@ -62,7 +62,8 @@ exports.Scripting = (function () {
 			});
 		});
 		testEmitter.on('next', function () {
-			var test_case_name = all_tests.shift()
+			setTimeout(function(){
+				var test_case_name = all_tests.shift();
 				if (test_case_name) {
 					tester[test_case_name](function (error) {
 						ut.fail(error);
@@ -75,6 +76,7 @@ exports.Scripting = (function () {
 					}
 					testEmitter.emit('end');
 				}
+			},ut.timeout);
 		});
 		if (scripting.debug_mode) {
 			server.set_debug_mode(true);
@@ -1715,19 +1717,18 @@ exports.Scripting = (function () {
 		args['name'] = name;
 		args['tags'] = tags;
 		args['overrides'] = overrides;
+				
 		server4.start_server(client_pid, args, function (err, res) {
 			if (err) {
 				errorCallback(err, null);
 			}
+			
 			setTimeout(function () {
 				server_pid1 = res;
 				client1 = g.srv[client_pid][server_pid1]['client'];
 				server_host = g.srv[client_pid][server_pid1]['host'];
 				server_port = g.srv[client_pid][server_pid1]['port'];
-				client1.on('error', function (err) {
-					ut.fail(err, true);
-					killserver();
-				});
+				
 				function killserver() {
 					client1.end();
 					server4.kill_server(client_pid, server_pid1, function (err, res) {
@@ -1739,8 +1740,13 @@ exports.Scripting = (function () {
 				}
 				client1.shutdown('somecommand', function (err, res) {
 					try {
-						if (!assert.ok(ut.match('syntax error', err), test_case)) {
-							client1.shutdown('save', function (err, res) {
+					if (!assert.ok(ut.match('syntax error', err), test_case)) {
+						setTimeout(function(){
+							//i had to use write for shutdown cause client.shutdown throws error
+							//this issue is present in mranney module and they recommend to use quit instead of shutdown for orderly shutdown.
+							//https://github.com/mranney/node_redis/pull/16
+							
+							client1.write(ut.formatCommand(['shutdown', 'save']), function (err, res) {
 								client1.end();
 								setTimeout(function () {
 									var msg = fs.readFileSync(g.srv[client_pid][server_pid1]['stdout']).toString().split('\n');
@@ -1755,16 +1761,18 @@ exports.Scripting = (function () {
 
 								}, 500);
 							});
-						}
+						},3000);
+					}
 					} catch (e) {
 						killserver();
 						ut.fail(e, true);
 					}
 				});
-			});
+			},1000);
 		});
-	}
+		
+	};
 
 	return scripting;
 }
-	())
+	());

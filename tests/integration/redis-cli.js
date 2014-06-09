@@ -270,15 +270,17 @@ exports.redis_cli = (function () {
 				cli_console.stdout.on('data', function (data) {
 					try {
 						//trim the data cause of new line charecter
-						if (!assert.equal(data.trim(), 'Invalid argument(s)', test_case))
+						if (!assert.equal(data.trim(), 'ERR wrong number of arguments for \'get\' command', test_case)){
 							cb(null, true);
+						}
 					} catch (e) {
 						strError = e;
 						cb(null, true);
 					}
 				});
+				
 				setTimeout(function () {
-					run_command(cli_console, "get \"\"key");
+					run_command(cli_console, "get key '\'");
 				}, 500);
 			},
 			six : function (cb) {
@@ -286,7 +288,7 @@ exports.redis_cli = (function () {
 				cli_console.stdout.on('data', function (data) {
 					try {
 						//trim the data cause of new line charecter
-						if (!assert.equal(data.trim(), 'Invalid argument(s)', test_case))
+						if (!assert.equal(data.trim(), 'ERR wrong number of arguments for \'get\' command', test_case))
 							cb(null, true);
 					} catch (e) {
 						strError = e;
@@ -294,7 +296,7 @@ exports.redis_cli = (function () {
 					}
 				});
 				setTimeout(function () {
-					run_command(cli_console, "get \"key\"x");
+					run_command(cli_console, "get key x");
 				}, 500);
 			},
 			seven : function (cb) {

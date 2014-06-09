@@ -34,7 +34,7 @@ exports.Deamon = (function () {
 			testEmitter.emit('next');
 		});
 		testEmitter.on('next', function () {
-			var test_case_name = all_tests.shift()
+			var test_case_name = all_tests.shift();
 				if (test_case_name) {
 					tester[test_case_name](function (error) {
 						ut.fail(error);

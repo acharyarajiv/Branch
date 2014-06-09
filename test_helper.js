@@ -64,46 +64,48 @@ var Test_helper = function () {
   var ut = new Utility(), tests = {}, all_start = 0, tests_pass = 0, tests_fail = 0, fail_list = {},
   node_child = {}, __test_list = [], client_pid = '', finish_time = {},
   start_client = false, counter = 0, test_array = [],
-  numclients = 16,
+  numclients = 40,
   test_list = new Array(
-    "unit/printver",
+    
+	"unit/printver",
 	"unit/auth",
-	"unit/protocol",
-	"unit/slowlog",	
-	"unit/scripting",
-	"unit/expire",
-	"unit/type/hash",
-	"unit/bitops",
-	"unit/dump",
-	"unit/sort",
-	"unit/multi",
-	"unit/cas",	 
-	"unit/quit",
-	"unit/maxmemory",
-	"unit/pubsub",
-	"unit/aofrw",
-	"unit/introspection",
-	"unit/basic",
-	"unit/scan",
-	"unit/sentinel",
-	"unit/memefficiency",
-	"unit/type/set",
-	"unit/type/list",
-	"unit/type/list2",
-	"unit/type/zset",
-	"integration/aof",
 	"integration/rdb",
 	"integration/convert-zipmap-hash-on-load",
-	"integration/redis-cli",
+	"unit/cas",	
+	"unit/pubsub",
+	"unit/memefficiency", 
+	"unit/slowlog",
+	"unit/maxmemory",
+	"unit/scan",
+	"unit/dump",
+	"unit/quit",
+	"unit/hyperloglog",
 	"unit/other",
-	"unit/obuf-limits", 
-	"unit/type/list3",
+	"unit/expire",
+	"unit/multi",
+	"unit/type/hash",
+	"unit/bitops",	
+	"unit/sort",
+	"unit/basic",
+	"unit/type/set",
+	"unit/type/zset",
+	"unit/limits",
+	"integration/redis-cli", 	
+	"unit/type/list",
+	"unit/type/list2",
+	"integration/aof",	
+	"unit/protocol",
+	"unit/aofrw",
+	"unit/scripting", 
 	"integration/replication",
 	"integration/replication-2",
 	"integration/replication-3",
 	"integration/replication-4",
+	"unit/introspection",
+	"unit/obuf-limits",
 	"integration/replication-psync",
-	"unit/limits",
+	"unit/type/list3",
+	"unit/sentinel",
 	"additional/daemonize"
   );
 
@@ -198,9 +200,6 @@ var Test_helper = function () {
         loop.next();
       }, 100);
 
-      node_child[i].on('exit', function (data) {
-      });
-
       node_child[i].on('message', function (obj) {
         counter += 1;
         tests_pass += obj.p;
@@ -208,7 +207,7 @@ var Test_helper = function () {
         for (k in obj.fl) {
           fail_list[k] = obj.fl[k];
         }
-        node_child[i].kill('SIGTERM');
+		node_child[i].kill('SIGTERM');
         if (counter === sanitized_clients) {
           print_result_cleanup();
         }
@@ -217,11 +216,15 @@ var Test_helper = function () {
     }, function () {
       g.asyncFor(0, sanitized_clients, function (loop) {
         var i = loop.iteration();
+		node_child[i].on('exit', function (data) {
+			setTimeout(function () {
+			  loop.next();
+			}, 3000);
+		});
         node_child[i].send(node_child[i].pid);
-        setTimeout(function () {
-          loop.next();
-        }, 3000);
-      }, function () { });
+      }, function () {
+		print_result_cleanup();
+	  });
     });
 
   }

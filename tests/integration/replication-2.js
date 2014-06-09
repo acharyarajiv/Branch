@@ -38,6 +38,7 @@ exports.Replication2 = (function () {
 		testEmitter.on('start', function () {
 			var tags = 'repl-2';
 			var overrides = {};
+			overrides['maxheap'] = '1gb';
 			var args = {};
 			args['name'] = name + '(Master)';
 			args['tags'] = tags;
@@ -53,6 +54,7 @@ exports.Replication2 = (function () {
 					master_port = g.srv[client_pid][server_pid]['port'];
 					var tags = 'repl';
 					var overrides = {};
+					overrides['maxheap'] = '512mb';
 					var args = {};
 					args['name'] = name + '(Slave0)';
 					args['tags'] = tags;
@@ -140,6 +142,7 @@ exports.Replication2 = (function () {
 					if (err) {
 						errorCallback(err);
 					}
+					setTimeout(function () {
 					slave_cli.debug('digest', function (err, digest0) {
 						if (err) {
 							errorCallback(err);
@@ -166,6 +169,7 @@ exports.Replication2 = (function () {
 							});
 						}
 					});
+					}, 1000);
 				});
 			}, 500);
 		});
@@ -175,6 +179,7 @@ exports.Replication2 = (function () {
 		var test_case = "SLAVEOF Command Basics";
 		var res_array = [];
 		var overrides = {};
+		overrides['maxheap'] = '1gb';
 		var args = {};
 		args['name'] = name;
 		args['tags'] = "Slave";
@@ -205,6 +210,7 @@ exports.Replication2 = (function () {
 		var test_case = "MIGRATE Command Basics";
 		var res_array = [];
 		var overrides = {};
+		overrides['maxheap'] = '1gb';
 		var args = {};
 		args['name'] = name;
 		args['tags'] = '';

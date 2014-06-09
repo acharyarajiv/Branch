@@ -84,6 +84,7 @@ exports.Replication4 = (function () {
 	tester.Repl41 = function (errorCallback) {
 		var tags = 'repl-41';
 		var overrides = {};
+		overrides['maxheap'] = '1gb';
 		var args = {};
 		args['name'] = name + '(Master)';
 		args['tags'] = tags;
@@ -105,6 +106,7 @@ exports.Replication4 = (function () {
 				});
 				var tags = 'repl-mr12';
 				var overrides = {};
+				overrides['maxheap'] = '512mb';
 				var args = {};
 				args['tags'] = tags;
 				args['name'] = name + '(Slave0)';
@@ -193,10 +195,12 @@ exports.Replication4 = (function () {
 						
 						var retry = 10;
 						g.asyncFor(0, retry, function (loop) {
+							setTimeout(function(){
 							master_cli.debug('digest', function (err, digest0) {
 								if (err) {
 									cb(err, null);
 								}
+								setTimeout(function(){
 								slave_cli.debug('digest', function (err, digest1) {
 									if (err) {
 										cb(err, null);
@@ -210,7 +214,9 @@ exports.Replication4 = (function () {
 										break();
 									}
 								});
+								},1000);
 							});
+							},1000);
 						}, function () {
 							master_cli.dbsize(function (err, res) {
 								if (err) {
@@ -219,10 +225,12 @@ exports.Replication4 = (function () {
 								if (res <= 0) {
 									cb(new Error('Master is inconsistent.'), null);
 								}
+								setTimeout(function(){
 								master_cli.debug('digest', function (err, digest) {
 									if (err) {
 										cb(err, null);
 									}
+									setTimeout(function(){
 									slave_cli.debug('digest', function (err, digest0) {
 										if (err) {
 											cb(err, null);
@@ -249,7 +257,9 @@ exports.Replication4 = (function () {
 											});
 										}
 									});
+									},1000);
 								});
+								},1000);
 							});
 						});
 					}, 5000);
@@ -263,8 +273,10 @@ exports.Replication4 = (function () {
 		};
 	};
 
-	tester.Repl42 = function(errorCallback){
-		var tags = 'repl-42';var overrides = {};
+	/* tester.Repl42 = function(errorCallback){
+		var tags = 'repl-42';
+		var overrides = {};
+		overrides['maxheap'] = '1gb';
 		var args = {};
 		args['name'] = name + '(Master)';
 		args['tags'] = tags;
@@ -280,6 +292,7 @@ exports.Replication4 = (function () {
 				master_port = g.srv[client_pid][server_pid]['port'];
 				var tags = 'repl-mr12';
 				var overrides = {};
+				overrides['maxheap'] = '512mb';
 				var args = {};
 				args['tags'] = tags;
 				args['name'] = name + '(Slave0)';
@@ -444,10 +457,11 @@ exports.Replication4 = (function () {
 			});
 		};
 	};
-	
+	 */
 	tester.Repl43 = function(errorCallback){
 		var tags = 'repl-43';
 		var overrides = {};
+		overrides['maxheap'] = '1gb';
 		var args = {};
 		args['name'] = name + '(Master)';
 		args['tags'] = tags;
@@ -463,6 +477,7 @@ exports.Replication4 = (function () {
 				master_port = g.srv[client_pid][server_pid]['port'];
 				var tags = 'repl-mr23';
 				var overrides = {};
+				overrides['maxheap'] = '512mb';
 				var args = {};
 				args['tags'] = tags;
 				args['name'] = name + '(Slave0)';
@@ -559,10 +574,12 @@ exports.Replication4 = (function () {
 					}, function(){
 						var retry = 10;
 						g.asyncFor(0, retry, function(loop){
+							setTimeout(function(){
 							master_cli.debug('digest', function(err, master_digest){
 								if(err){
 									cb(err, null);
 								}
+								setTimeout(function(){
 								slave_cli.debug('digest', function(err, slave_digest){
 									if(err){
 										cb(err, null);
@@ -575,7 +592,9 @@ exports.Replication4 = (function () {
 									else
 										loop.break();
 								});
+								},1000);
 							});
+							},1000);
 						},function(){
 							master_cli.dbsize(function(err, res){
 								ut.assertOk((res > 0), null, test_case);

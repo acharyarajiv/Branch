@@ -470,18 +470,18 @@ exports.Other = (function () {
 		var test_case = 'PIPELINING stresser (also a regression for the old epoll bug.) ';
 		var error = '',
 		flag = true;
-		client.write(ut.formatCommand(['SELECT', '9']), function (err, res) {
+		client.select('9', function (err, res) {
 			if (err) {
 				errorCallback(err);
 			}
 			g.asyncFor(0, 100000, function (loop) {
 				var i = loop.iteration();
 				var val = '0000' + i + '0000';
-				client.write(ut.formatCommand(['SET', 'key:' + i, val]), function (err, set_res) {
+				client.set('key:' + i, val, function (err, set_res) {
 					if (err) {
 						errorCallback(err);
 					}
-					client.write(ut.formatCommand(['GET', 'key:' + i]), function (err, get_res) {
+					client.get('key:' + i, function (err, get_res) {
 						if (err) {
 							errorCallback(err);
 						}
@@ -659,7 +659,7 @@ exports.Other = (function () {
 			if (err) {
 				errorCallback(err)
 			}
-			ut.assertEqual(res.length, 110, test_case);
+			ut.assertEqual(res.length, 114, test_case);
 			testEmitter.emit('next');
 		});
 	};
@@ -994,7 +994,7 @@ exports.Other = (function () {
 			});
 		});
 	}
-	
+
 	return other;
 
 }

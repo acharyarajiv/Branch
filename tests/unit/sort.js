@@ -51,7 +51,8 @@ exports.Sort = (function () {
 			});
 		});
 		testEmitter.on('next', function () {
-			var test_case_name = all_tests.shift()
+			setTimeout(function(){
+				var test_case_name = all_tests.shift()
 				if (test_case_name) {
 					tester[test_case_name](function (error) {
 						ut.fail(error);
@@ -64,6 +65,7 @@ exports.Sort = (function () {
 					}
 					testEmitter.emit('end');
 				}
+			},ut.timeout);
 		});
 		testEmitter.on('end', function () {
 			server.kill_server(client_pid, server_pid, function (err, res) {

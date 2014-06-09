@@ -37,7 +37,8 @@ exports.Auth = (function () {
 			callback(null, true);
 		});
 		testEmitter.on('next', function () {
-			var test_case_name = all_tests.shift()
+			setTimeout(function(){
+				var test_case_name = all_tests.shift();
 				if (test_case_name) {
 					tester[test_case_name](function (error) {
 						ut.fail(error);
@@ -46,6 +47,7 @@ exports.Auth = (function () {
 				} else {
 					testEmitter.emit('end');
 				}
+			},ut.timeout);
 		});
 		if (auth.debug_mode) {
 			server.set_debug_mode(true);
