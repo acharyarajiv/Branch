@@ -33,15 +33,18 @@
 - Run the bgsaveperf using the following:
 	<pre><code> \redisnodetest\>node test_bgsaveperf.js </code></pre>
 
+## Steps to Run the Tests from Grunt
+- to run testsuite from grunt type
+- <pre><code> \redisnodetest\>grunt </code></pre>
 
 
 #### Known Issues
-- 1 Tests in Basic.js (Fuzzing operation, need to find alternative to Tcl Binary format B*.)
-- 1 test in list3.js takes more than 60 seconds to run.
+- one testcase in obuf-limit might fail
 
 #### Note
 - Test suite makes use of a [modified version of node_redis][6].
 - Code coverage is 73.4%
+- For replication testcases please make sure you have atleast 15gb of free hardrive space
 - currently logs are are <pre><code>\tests\logs\results.log</code></pre>
 - logging of all commands/data in and out or redis is encorporated, to enable , in test_helper.js set <pre><code>redis.log_to_file = true</code></pre>
 - the debug log for above would be found at <pre><code>\tests\logs\redis-debug.log</code></pre>
