@@ -288,7 +288,7 @@ Server.prototype.kill_server = function (cpid, spid, k_callback) {
 		g.srv[cpid][spid]['stdout_stream'].destroySoon();
 		g.srv[cpid][spid]['stderr_stream'].close();
 		g.srv[cpid][spid]['stderr_stream'].destroySoon();
-		g.srv[cpid][spid]['server'].kill('SIGKILL');
+		g.srv[cpid][spid]['server'].kill('SIGINT');
 		if (debug_mode) {
 			log.notice(g.srv[cpid][spid]['name'] + ':Redis Server killed on socket : ' + g.srv[cpid][spid]['host'] + ':' + g.srv[cpid][spid]['port']);
 		} 

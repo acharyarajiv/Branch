@@ -1,6 +1,6 @@
 // The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
 //
-// Copyright (c) 2013, Microsoft Open Technologies, Inc. 
+// Copyright (c) 2013, Microsoft Open Technologies, Inc.
 //
 // All rights reserved.
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -57,7 +57,8 @@ exports.Replication = (function () {
       testEmitter.emit('next');
     });
     testEmitter.on('next', function () {
-      var test_case_name = all_tests.shift()
+      setTimeout(function () {
+        var test_case_name = all_tests.shift();
         if (test_case_name) {
           tester[test_case_name](function (error) {
             ut.fail(error);
@@ -66,6 +67,7 @@ exports.Replication = (function () {
         } else {
           testEmitter.emit('end');
         }
+      }, ut.timeout);
     });
     testEmitter.on('end', function () {
       callback(null, true);
@@ -113,7 +115,7 @@ exports.Replication = (function () {
         });
         var tags = 'repl-mr12';
         var overrides = {};
-		overrides['maxheap'] = '1gb';
+        overrides['maxheap'] = '1gb';
         var args = {};
         args['tags'] = tags;
         args['name'] = name + '(Slave0)';
@@ -316,7 +318,7 @@ exports.Replication = (function () {
   tester.Repl2 = function (errorCallback) {
     var tags = 'repl-mr21';
     var overrides = {};
-	overrides['maxheap'] = '1gb';
+    overrides['maxheap'] = '1gb';
     var args = {};
     args['name'] = name + '(Master)';
     args['tags'] = tags;
@@ -336,7 +338,7 @@ exports.Replication = (function () {
           }
           var overrides = {};
           overrides['slave-read-only'] = 'no';
-		  overrides['maxheap'] = '512mb';
+          overrides['maxheap'] = '512mb';
           var tags = 'repl-mr22';
           var args = {};
           args['name'] = name + '(Slave0)';
@@ -518,7 +520,7 @@ exports.Replication = (function () {
     var test_case = 'Connect multiple slaves at the same time (issue #141)';
     var tags = 'repl-mr31';
     var overrides = {};
-	overrides['maxheap'] = '1gb';
+    overrides['maxheap'] = '1gb';
     var args = {};
     args['name'] = name + '(Master)';
     args['tags'] = tags;
@@ -539,7 +541,7 @@ exports.Replication = (function () {
         load_handle4 = start_write_load(master_host, master_port, 4);
         setTimeout(function () {
           var overrides = {};
-		  overrides['maxheap'] = '1gb';
+          overrides['maxheap'] = '1gb';
           var tags = 'repl-mr32';
           var args = {};
           args['name'] = name + '(Slave0)';
@@ -553,7 +555,7 @@ exports.Replication = (function () {
             client1 = g.srv[client_pid][server_pid2]['client'];
             setTimeout(function () {
               var overrides = {};
-			  overrides['maxheap'] = '1gb';
+              overrides['maxheap'] = '1gb';
               var tags = 'repl-mr33';
               var args = {};
               args['name'] = name + '(Slave1)';
@@ -567,7 +569,7 @@ exports.Replication = (function () {
                 client2 = g.srv[client_pid][server_pid3]['client'];
                 setTimeout(function () {
                   var overrides = {};
-				  overrides['maxheap'] = '512mb';
+                  overrides['maxheap'] = '512mb';
                   var tags = 'repl-mr34';
                   var args = {};
                   args['name'] = name + '(Slave2)';
@@ -723,45 +725,45 @@ exports.Replication = (function () {
                       if (err) {
                         callback(err);
                       }
-					  setTimeout(function () {
-                      client1.debug('digest', function (err, digest0) {
-                        if (err) {
-                          callback(err);
-                        }
-						setTimeout(function () {
-                        client2.debug('digest', function (err, digest1) {
+                      setTimeout(function () {
+                        client1.debug('digest', function (err, digest0) {
                           if (err) {
                             callback(err);
                           }
-						  setTimeout(function () {
-                          client3.debug('digest', function (err, digest2) {
-                            if (err) {
-                              callback(err);
-                            }
-                            try {
-                              if ((!assert.notEqual(digest, '0000000000000000000000000000000000000000', test_case)) && (!assert.deepEqual(digest, digest0, test_case)) && (!assert.deepEqual(digest, digest1, test_case)) && (!assert.deepEqual(digest, digest2, test_case))) {
-                                ut.pass(test_case);
-                                client3.end();
-                                client2.end();
-                                client1.end();
-                                master.end();
-                                if (replication.debug_mode) {
-                                  log.notice(g.srv[client_pid][server_pid4]['name'] + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid4]['host'] + ':' + g.srv[client_pid][server_pid4]['port']);
-                                  log.notice(g.srv[client_pid][server_pid3]['name'] + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid3]['host'] + ':' + g.srv[client_pid][server_pid3]['port']);
-                                  log.notice(g.srv[client_pid][server_pid2]['name'] + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid2]['host'] + ':' + g.srv[client_pid][server_pid2]['port']);
-                                  log.notice(g.srv[client_pid][server_pid]['name'] + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid]['host'] + ':' + g.srv[client_pid][server_pid]['port']);
-                                }
-                                callback(null, true);
+                          setTimeout(function () {
+                            client2.debug('digest', function (err, digest1) {
+                              if (err) {
+                                callback(err);
                               }
-                            } catch (e) {
-                              callback(e);
-                            }
-                          });
-						  }, 1000);
+                              setTimeout(function () {
+                                client3.debug('digest', function (err, digest2) {
+                                  if (err) {
+                                    callback(err);
+                                  }
+                                  try {
+                                    if ((!assert.notEqual(digest, '0000000000000000000000000000000000000000', test_case)) && (!assert.deepEqual(digest, digest0, test_case)) && (!assert.deepEqual(digest, digest1, test_case)) && (!assert.deepEqual(digest, digest2, test_case))) {
+                                      ut.pass(test_case);
+                                      client3.end();
+                                      client2.end();
+                                      client1.end();
+                                      master.end();
+                                      if (replication.debug_mode) {
+                                        log.notice(g.srv[client_pid][server_pid4]['name'] + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid4]['host'] + ':' + g.srv[client_pid][server_pid4]['port']);
+                                        log.notice(g.srv[client_pid][server_pid3]['name'] + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid3]['host'] + ':' + g.srv[client_pid][server_pid3]['port']);
+                                        log.notice(g.srv[client_pid][server_pid2]['name'] + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid2]['host'] + ':' + g.srv[client_pid][server_pid2]['port']);
+                                        log.notice(g.srv[client_pid][server_pid]['name'] + ':Client disconnected listeting to socket : ' + g.srv[client_pid][server_pid]['host'] + ':' + g.srv[client_pid][server_pid]['port']);
+                                      }
+                                      callback(null, true);
+                                    }
+                                  } catch (e) {
+                                    callback(e);
+                                  }
+                                });
+                              }, 1000);
+                            });
+                          }, 1000);
                         });
-						}, 1000);
-                      });
-					  }, 1000);
+                      }, 1000);
                     });
                   }, 100);
                 }, function () {

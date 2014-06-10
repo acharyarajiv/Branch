@@ -1,6 +1,6 @@
 // The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
 //
-// Copyright (c) 2013, Microsoft Open Technologies, Inc. 
+// Copyright (c) 2013, Microsoft Open Technologies, Inc.
 //
 // All rights reserved.
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -52,62 +52,72 @@ if (process.platform === 'win32') {
 // global log
 try {
   fs.statSync('./tests/logs');
-}
-catch (er) {
+} catch (er) {
   fs.mkdirSync('./tests/logs');
 }
-log = new Log('debug', fs.createWriteStream('./tests/logs/results.log', { flags: 'a' }));
+log = new Log('debug', fs.createWriteStream('./tests/logs/results.log', {
+      flags : 'a'
+    }));
 
 //module definition
 var Test_helper = function () {
   //private properties
-  var ut = new Utility(), tests = {}, all_start = 0, tests_pass = 0, tests_fail = 0, fail_list = {},
-  node_child = {}, __test_list = [], client_pid = '', finish_time = {},
-  start_client = false, counter = 0, test_array = [],
+  var ut = new Utility(),
+  tests = {},
+  all_start = 0,
+  tests_pass = 0,
+  tests_fail = 0,
+  fail_list = {},
+  node_child = {},
+  __test_list = [],
+  client_pid = '',
+  finish_time = {},
+  start_client = false,
+  counter = 0,
+  test_array = [],
   numclients = 40,
   test_list = new Array(
-    
-	"unit/printver",
-	"unit/auth",
-	"integration/rdb",
-	"integration/convert-zipmap-hash-on-load",
-	"unit/cas",	
-	"unit/pubsub",
-	"unit/memefficiency", 
-	"unit/slowlog",
-	"unit/maxmemory",
-	"unit/scan",
-	"unit/dump",
-	"unit/quit",
-	"unit/hyperloglog",
-	"unit/other",
-	"unit/expire",
-	"unit/multi",
-	"unit/type/hash",
-	"unit/bitops",	
-	"unit/sort",
-	"unit/basic",
-	"unit/type/set",
-	"unit/type/zset",
-	"unit/limits",
-	"integration/redis-cli", 	
-	"unit/type/list",
-	"unit/type/list2",
-	"integration/aof",	
-	"unit/protocol",
-	"unit/aofrw",
-	"unit/scripting", 
-	"integration/replication",
-	"integration/replication-2",
-	"integration/replication-3",
-	"integration/replication-4",
-	"unit/introspection",
-	"unit/obuf-limits",
-	"integration/replication-psync",
-	"unit/type/list3",
-	"unit/sentinel",
-	"additional/daemonize"
-  );
+
+      "unit/printver",
+      "unit/auth",
+      "integration/rdb",
+      "integration/convert-zipmap-hash-on-load",
+      "unit/cas",
+      "unit/pubsub",
+      "unit/memefficiency",
+      "unit/slowlog",
+      "unit/maxmemory",
+      "unit/scan",
+      "unit/dump",
+      "unit/quit",
+      "unit/hyperloglog",
+      "unit/other",
+      "unit/expire",
+      "unit/multi",
+      "unit/type/hash",
+      "unit/bitops",
+      "unit/sort",
+      "unit/basic",
+      "unit/type/set",
+      "unit/type/zset",
+      "unit/limits",
+      "integration/redis-cli",
+      "unit/type/list",
+      "unit/type/list2",
+      "integration/aof",
+      "unit/protocol",
+      "unit/aofrw",
+      "unit/scripting",
+      "integration/replication",
+      "integration/replication-2",
+      "integration/replication-3",
+      "integration/replication-4",
+      "unit/introspection",
+      "unit/obuf-limits",
+      "integration/replication-psync",
+      "unit/type/list3",
+      /* "unit/sentinel", */
+      "additional/daemonize");
 
   //private methods
 
@@ -118,39 +128,36 @@ var Test_helper = function () {
     console.log('--help \t\tPrint the help screen.\n');
   };
   function list_tests() {
-    for (var i = 0 ; i < test_list.length ; i++) {
+    for (var i = 0; i < test_list.length; i++) {
       console.log('Test units: ' + test_list[i]);
     }
   }
- /* With the parallel test running multiple Redis instances at the same time
-	 we need a fast enough computer, otherwise a lot of tests may generate
-	 false positives.
-	 If the computer is too slow we revert the sequetial test without any
- parallelism, that is, clients == 1.*/
-	function is_a_slow_computer() {
-		var start  = new Date().getTime();
-		var elapsed = '';
-		for(var i=0;i<1000000;j++){
-			i=i;
-		}
-		return (new Date().getTime() - start) > 200;
-	}
+  /* With the parallel test running multiple Redis instances at the same time
+  we need a fast enough computer, otherwise a lot of tests may generate
+  false positives.
+  If the computer is too slow we revert the sequetial test without any
+  parallelism, that is, clients == 1.*/
+  function is_a_slow_computer() {
+    var start = new Date().getTime();
+    var elapsed = '';
+    for (var i = 0; i < 1000000; j++) {
+      i = i;
+    }
+    return (new Date().getTime() - start) > 200;
+  }
   //parse arguments
-  for (var index = 2; index < process.argv.length ; index++) {
+  for (var index = 2; index < process.argv.length; index++) {
     var option = process.argv[index];
     if (option === '--list-tests') {
       list_tests();
       process.exit();
-    }
-    else if (option === '--client') {
+    } else if (option === '--client') {
       start_client = true;
       __test_list = process.argv[++index].split(",");
-    }
-    else if (option === '--help') {
+    } else if (option === '--help') {
       print_help_screen();
       process.exit();
-    }
-    else {
+    } else {
       console.log('Wrong Argument ' + option);
       process.exit(0);
     }
@@ -180,9 +187,9 @@ var Test_helper = function () {
     var sanitized_clients = check_sanity(numclients);
     var q = Math.floor(test_list.length / sanitized_clients);
     var r = test_list.length % sanitized_clients;
-    for (var i = 0 ; i < sanitized_clients ; i++) {
+    for (var i = 0; i < sanitized_clients; i++) {
       test_array[i] = new Array();
-      for (var j = 0; j < q ; j++) {
+      for (var j = 0; j < q; j++) {
         test_array[i].push(test_list[c]);
         c++;
       }
@@ -195,7 +202,9 @@ var Test_helper = function () {
 
     g.asyncFor(0, sanitized_clients, function (loop) {
       var i = loop.iteration();
-      node_child[i] = child.fork('./test_helper.js', ['--client', test_array[i]], { env: process.env, });
+      node_child[i] = child.fork('./test_helper.js', ['--client', test_array[i]], {
+          env : process.env,
+        });
       setTimeout(function () {
         loop.next();
       }, 100);
@@ -207,24 +216,24 @@ var Test_helper = function () {
         for (k in obj.fl) {
           fail_list[k] = obj.fl[k];
         }
-		node_child[i].kill('SIGTERM');
-        if (counter === sanitized_clients) {
+        node_child[i].kill('SIGTERM');
+        /* if (counter === sanitized_clients) {
           print_result_cleanup();
-        }
+        } */
       });
 
     }, function () {
       g.asyncFor(0, sanitized_clients, function (loop) {
         var i = loop.iteration();
-		node_child[i].on('exit', function (data) {
-			setTimeout(function () {
-			  loop.next();
-			}, 3000);
-		});
+        node_child[i].on('exit', function (data) {
+          setTimeout(function () {
+            loop.next();
+          }, 3000);
+        });
         node_child[i].send(node_child[i].pid);
       }, function () {
-		print_result_cleanup();
-	  });
+        print_result_cleanup();
+      });
     });
 
   }
@@ -243,8 +252,7 @@ var Test_helper = function () {
         console.log('Cleanup Done!!');
         process.exit(0);
       });
-    }
-    else {
+    } else {
       for (hrt in fail_list) {
         if (fail_list.hasOwnProperty(hrt)) {
           console.log('\t\x1b[41m Fail \x1b[0m- ' + fail_list[hrt] + '\n');
@@ -331,7 +339,12 @@ var Test_helper = function () {
         if (tname)
           run_tests(tname);
         else {
-          process.send({ pid: client_pid, p: ut.getPassTests(), f: ut.getFailTests(), fl: ut.getFailList() });
+          process.send({
+            pid : client_pid,
+            p : ut.getPassTests(),
+            f : ut.getFailTests(),
+            fl : ut.getFailList()
+          });
         }
       } else if (err) {
         console.log(err.stack);
@@ -340,4 +353,5 @@ var Test_helper = function () {
     });
   }
 
-}();
+}
+();
