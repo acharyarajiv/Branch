@@ -1626,7 +1626,7 @@ exports.Set = (function () {
   };
 
   tester.set30 = function (errorCallback) {
-    var test_case = 'SDIFF with first set empty';
+    var test_case = 'SDIFF with same set two times';
     client.del('set1');
     client.sadd('set1', 'a', 'b', 'c', 1, 2, 3, 4, 5, 6);
     client.sdiff('set1', 'set1', function (err, res) {

@@ -171,6 +171,15 @@ exports.Zset = (function () {
     });
   }
 
+  function create_default_lex_zset(callback) {
+    create_zset('zset', [0, 'alpha', 0, 'bar', 0, 'cool', 0, 'down', 0, 'elephant', 0, 'foo', 0, 'great', 0, 'hill', 0, 'omega'], function (err, res) {
+      if (err) {
+        callback(err, null);
+      }
+      callback(null, true);
+    });
+  }
+
   tester.zset1 = function (errorCallback) {
     var enc = new Array('ziplist', 'skiplist');
     var m_error = '';
@@ -2291,7 +2300,249 @@ exports.Zset = (function () {
       }
     });
   };
+
   tester.zset2 = function (errorCallback) {
+    var res_array = []
+    create_default_lex_zset(function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      async.series({
+        a : function (cb) {
+          //# inclusive range
+          var test_case = 'ZRANGEBYLEX/ZREVRANGEBYLEX/ZCOUNT basics - inclusive range';
+          client.zrangebylex('zset', '-', '\[cool', function (err, res) {
+            if (err) {
+              errorCallback(err);
+            }
+            res_array.push(res);
+            client.zrangebylex('zset', '\[bar', '\[down', function (err, res) {
+              if (err) {
+                errorCallback(err);
+              }
+              res_array.push(res);
+              client.zrangebylex('zset', '\[g', '+', function (err, res) {
+                if (err) {
+                  errorCallback(err);
+                }
+                res_array.push(res);
+                client.zrevrangebylex('zset', '\[cool', '-', function (err, res) {
+                  if (err) {
+                    errorCallback(err);
+                  }
+                  res_array.push(res);
+                  client.zrevrangebylex('zset', '\[down', '\[bar', function (err, res) {
+                    if (err) {
+                      errorCallback(err);
+                    }
+                    res_array.push(res);
+                    client.zrevrangebylex('zset', '+', '\[d', function (err, res) {
+                      if (err) {
+                        errorCallback(err);
+                      }
+                      res_array.push(res);
+                      client.zlexcount('zset', '\[ele', '\[h', function (err, res) {
+                        if (err) {
+                          errorCallback(err);
+                        }
+                        res_array.push(res);
+                        ut.assertDeepEqual([['alpha', 'bar', 'cool'], ['bar', 'cool', 'down'],
+                            ['great', 'hill', 'omega'], ['cool', 'bar', 'alpha'], ['down', 'cool', 'bar'],
+                            ['omega', 'hill', 'great', 'foo', 'elephant', 'down'], 3], res_array, test_case);
+                        cb(null, true);
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        },
+        b : function (cb) {
+          var test_case = 'ZRANGEBYLEX/ZREVRANGEBYLEX/ZCOUNT basics - exclusive range';
+          res_array = [];
+          client.zrangebylex('zset', '-', '(cool', function (err, res) {
+            if (err) {
+              errorCallback(err);
+            }
+            res_array.push(res);
+            client.zrangebylex('zset', '(bar', '(down', function (err, res) {
+              if (err) {
+                errorCallback(err);
+              }
+              res_array.push(res);
+              client.zrangebylex('zset', '(great', '+', function (err, res) {
+                if (err) {
+                  errorCallback(err);
+                }
+                res_array.push(res);
+                client.zrevrangebylex('zset', '(cool', '-', function (err, res) {
+                  if (err) {
+                    errorCallback(err);
+                  }
+                  res_array.push(res);
+                  client.zrevrangebylex('zset', '(down', '(bar', function (err, res) {
+                    if (err) {
+                      errorCallback(err);
+                    }
+                    res_array.push(res);
+                  });
+                  client.zrevrangebylex('zset', '+', '(great', function (err, res) {
+                    if (err) {
+                      errorCallback(err);
+                    }
+                    res_array.push(res);
+                    client.zlexcount('zset', '(ele', '(great', function (err, res) {
+                      if (err) {
+                        errorCallback(err);
+                      }
+                      res_array.push(res);
+                      ut.assertDeepEqual([['alpha', 'bar'], ['cool'],
+                          ['hill', 'omega'], ['bar', 'alpha'], ['cool'],
+                          ['omega', 'hill'], 2], res_array, test_case);
+                      cb(null, true);
+                    });
+                  });
+                });
+              });
+            });
+          });
+        },
+        c : function (cb) {
+          res_array = [];
+          var test_case = 'ZRANGEBYLEX/ZREVRANGEBYLEX/ZCOUNT basics - inclusive and exclusive';
+          client.zrangebylex('zset', '(az', '(b', function (err, res) {
+            if (err) {
+              errorCallback(err);
+            }
+            res_array.push(res);
+            client.zrangebylex('zset', '(z', '+', function (err, res) {
+              if (err) {
+                errorCallback(err);
+              }
+              res_array.push(res);
+              client.zrangebylex('zset', '-', '\[aaaa', function (err, res) {
+                if (err) {
+                  errorCallback(err);
+                }
+                res_array.push(res);
+                client.zrevrangebylex('zset', '\[elez', '\[elex', function (err, res) {
+                  if (err) {
+                    errorCallback(err);
+                  }
+                  res_array.push(res);
+                  client.zrevrangebylex('zset', '(hill', '(omega', function (err, res) {
+                    if (err) {
+                      errorCallback(err);
+                    }
+                    res_array.push(res);
+                    ut.assertDeepEqual([[], [], [],
+                        [], []], res_array, test_case);
+                    cb(null, true);
+                  });
+                });
+              });
+            });
+          });
+        }
+      }, function (err, rep) {
+        testEmitter.emit('next');
+      });
+    });
+  }
+
+  tester.zset3 = function (errorCallback) {
+    var test_case = 'ZRANGEBYSLEX with LIMIT';
+    var res_array = [];
+    create_default_lex_zset(function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.zrangebylex('zset', '-', '\[cool', 'LIMIT', 0, 2, function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        res_array.push(res);
+        client.zrangebylex('zset', '-', '\[cool', 'LIMIT', 1, 2, function (err, res) {
+          if (err) {
+            errorCallback(err);
+          }
+          res_array.push(res);
+          client.zrangebylex('zset', '\[bar', '\[down', 'LIMIT', 0, 0, function (err, res) {
+            if (err) {
+              errorCallback(err);
+            }
+            res_array.push(res);
+            client.zrangebylex('zset', '\[bar', '\[down', 'LIMIT', 2, 0, function (err, res) {
+              if (err) {
+                errorCallback(err);
+              }
+              res_array.push(res);
+              client.zrangebylex('zset', '\[bar', '\[down', 'LIMIT', 0, 1, function (err, res) {
+                if (err) {
+                  errorCallback(err);
+                }
+                res_array.push(res);
+                client.zrangebylex('zset', '\[bar', '\[down', 'LIMIT', 1, 1, function (err, res) {
+                  if (err) {
+                    errorCallback(err);
+                  }
+                  res_array.push(res);
+                  client.zrangebylex('zset', '\[bar', '\[down', 'LIMIT', 0, 100, function (err, res) {
+                    if (err) {
+                      errorCallback(err);
+                    }
+                    res_array.push(res);
+                    client.zrevrangebylex('zset', '+', '\[d', 'LIMIT', 0, 5, function (err, res) {
+                      if (err) {
+                        errorCallback(err);
+                      }
+                      res_array.push(res);
+                      client.zrevrangebylex('zset', '+', '\[d', 'LIMIT', 0, 4, function (err, res) {
+                        if (err) {
+                          errorCallback(err);
+                        }
+                        res_array.push(res);
+                        ut.assertDeepEqual([['alpha', 'bar'], ['bar', 'cool'],
+                            [], [], ['bar'], ['cool'], ['bar', 'cool', 'down'], ['omega', 'hill', 'great', 'foo', 'elephant'],
+                            ['omega', 'hill', 'great', 'foo']], res_array, test_case);
+                        testEmitter.emit('next');
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  }
+
+  tester.zset4 = function (errorCallback) {
+    var test_case = 'ZRANGEBYLEX with invalid lex range specifiers';
+    client.zrangebylex('fooz', 'foo', 'bar', function (err1, res) {
+      client.zrangebylex('fooz', '\[foo', 'bar', function (err2, res) {
+        client.zrangebylex('fooz', 'foo', '\[bar', function (err3, res) {
+          client.zrangebylex('fooz', '+x', '\[bar', function (err4, res) {
+            client.zrangebylex('fooz', '-x', '\[bar', function (err5, res) {
+              ut.assertMany([
+                  ['ok', (ut.match('not valid string', err1)), true],
+                  ['ok', (ut.match('not valid string', err2)), true],
+                  ['ok', (ut.match('not valid string', err3)), true],
+                  ['ok', (ut.match('not valid string', err4)), true],
+                  ['ok', (ut.match('not valid string', err5)), true],
+
+                ], test_case);
+              testEmitter.emit('next');
+            });
+          });
+        });
+      });
+    });
+  }
+
+  tester.zset5 = function (errorCallback) {
     var test_case = 'ZINTERSTORE regression with two sets, intset+hashtable';
     client.del('seta', 'setb', 'setc', function (err, res) {
       if (err) {
@@ -2316,7 +2567,8 @@ exports.Zset = (function () {
       });
     });
   };
-  tester.zset3 = function (errorCallback) {
+
+  tester.zset6 = function (errorCallback) {
     var test_case = 'ZUNIONSTORE regression, should not create NaN in scores';
     client.zadd('z', n_inf, 'neginf', function (err, res) {
       if (err) {
@@ -2336,7 +2588,8 @@ exports.Zset = (function () {
       });
     });
   };
-  tester.zset4 = function (errorCallback) {
+
+  tester.zset7 = function (errorCallback) {
     var stresser = new Array('ziplist', 'skiplist');
     var n_error = '',
     elements = '';
@@ -2532,7 +2785,7 @@ exports.Zset = (function () {
             });
           },
           four : function (cb) {
-            var test_case = 'ZRANGEBYSCORE fuzzy test, 100 ranges in $elements element sorted set - ' + stresser[itr];
+            var test_case = 'ZRANGEBYSCORE fuzzy test, 100 ranges in 128 element sorted set - ' + stresser[itr];
             var error = [],
             low = '',
             lowx = '',
@@ -2919,8 +3172,187 @@ exports.Zset = (function () {
       }
     });
   };
+
+  tester.zset8 = function (errorCallback) {
+    var enc = new Array('ziplist', 'skiplist');
+    var itype = 0,
+    lexset = [],
+    elements = 128,
+    e = '',
+    error = false; ;
+    g.asyncFor(0, enc.length, function (type) {
+      itype = type.iteration();
+      var test_case = 'ZRANGEBYLEX fuzzy test, 100 ranges in 128 element sorted set - ' + enc[itype];
+      client.del('zset', function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        g.asyncFor(0, elements, function (loop) {
+          e = ut.randstring(0, 30, 'alpha');
+          lexset.push(e);
+          client.zadd('zset', 0, e, function (err, res) {
+            if (err) {
+              errorCallback(err);
+            }
+            loop.next();
+          });
+        }, function () {
+          lexset = lexset.sort();
+          var min = '',
+          max = '',
+          mininc = 0,
+          maxinc = 0,
+          cmin,
+          cmax,
+          rev,
+          cmd,
+          o,
+          copy;
+          g.asyncFor(0, 100, function (loop) {
+            min = ut.randstring(0, 30, 'alpha');
+            max = ut.randstring(0, 30, 'alpha');
+            mininc = parseInt(ut.randomInt(2));
+            maxinc = parseInt(ut.randomInt(2));
+            cmin = (mininc) ? '\[$min' : '($min';
+            cmax = (maxinc) ? '\[$max' : '($max';
+            rev = ut.randomInt(2);
+            cmd = (rev) ? 'zrevrangebylex' : 'zrangebylex';
+            //#  Make sure data is the same in both sides
+            client.zrange('zset', 0, -1, function (err, lexset) {
+              if (err) {
+                errorCallback(err);
+              }
+              //# Get the Redis output
+              client.write(ut.formatCommand([cmd, 'zset', cmin, cmax]), function (err, output_res) {
+                if (err) {
+                  errorCallback(err);
+                }
+                if (rev)
+                  cmd = ['zlexcount', 'zset', cmax, cmin];
+                else
+                  cmd = ['zlexcount', 'zset', cmin, cmax];
+                client.write(ut.formatCommand(cmd), function (err, outlen) {
+                  if (err) {
+                    errorCallback(err);
+                  }
+                  try {
+                    if (!assert.equal(output_res.length, outlen, test_case))
+                      loop.next();
+                  } catch (e) {
+                    error = true;
+                    ut.fail(e);
+                    loop.break();
+                  }
+                });
+              });
+            });
+          }, function () {
+			if(!error)
+				ut.pass(test_case);
+            type.next();
+          });
+        });
+      });
+    }, function () {
+      testEmitter.emit('next');
+    });
+  };
+
+  
+  tester.zset9 = function (errorCallback) {
+    var enc = new Array('ziplist', 'skiplist');
+    var itype = 0,
+    lexset = [],
+	elements = 128
+    e = '',
+    error = false;
+    g.asyncFor(0, enc.length, function (type) {
+      itype = type.iteration();
+      var test_case = 'ZREMRANGEBYLEX fuzzy test, 100 ranges in ' + elements + ' element sorted set - ' + enc[itype];
+	  lexset = [];
+	  client.del('zset', 'zsetcopy', function(err, res){
+		if(err){
+			errorCallback(err);
+		}
+		g.asyncFor(0, elements, function (loop) {
+			e = ut.randstring(0, 30, 'alpha');
+			lexset.push(e);
+			client.zadd('zset', 0, e, function(err, res){
+				if(err){
+					errorCallback(err);
+				}
+				loop.next();
+			});			
+		}, function(){
+			var min, max, mininc, maxinc, cmin, cmax, output, first, last, lexsetcopy
+			lexset = lexset.sort();
+			g.asyncFor(0, 100, function (loop) {
+				//# Copy...
+				client.zunionstore('zsetcopy', 1, 'zset', function(err, res){
+					if(err){
+						errorCallback(err);
+					}
+					lexsetcopy = lexset.slice(0);
+					min = ut.randstring(0, 30, 'alpha');
+					max = ut.randstring(0, 30, 'alpha');
+					mininc = parseInt(ut.randomInt(2));
+					maxinc = parseInt(ut.randomInt(2));
+					cmin  = (mininc) ? '\[$min' : '($min';
+					cmax  = (maxinc) ? '\[$max' : '($max';
+					client.zrange('zset', 0, -1, function(err, res){
+						if(err){
+							errorCallback(err);
+						}
+						client.zrangebylex('zset', cmin, cmax, function(err, torem){
+							if(err){
+								errorCallback(err);
+							}
+							client.zlexcount('zset', cmin, cmax, function(err, toremlen){
+								if(err){
+									errorCallback(err);
+								}
+								client.zremrangebylex('zsetcopy', cmin, cmax, function(err, res){
+									if(err){
+										errorCallback(err);
+									}
+									client.zrange('zsetcopy', 0, -1, function(err, output){
+										if(err){
+											errorCallback(err);
+										}
+										//# Remove the range with Js from the original list
+										if(toremlen){
+											first = lexsetcopy.indexOf(torem[0]);
+											last = first + toremlen - 1;
+											console.log(lexsetcopy);
+										}
+										try{
+											if(!assert.equal(lexsetcopy.toString(), output.toString(), test_case))
+												loop.next();
+										} catch(e){
+											error = true;
+											ut.fail(e);
+											loop.break();
+										}										
+									});
+								});
+							});
+						});
+					});
+				});
+			}, function(){
+				if(!error)
+					ut.pass(test_case);
+				type.next();
+			});
+		});
+	  });
+    }, function () {
+      testEmitter.emit('next');
+    });
+  }
+
   // 2.6 addition
-  tester.zset5 = function (errorCallback) {
+  tester.zset10 = function (errorCallback) {
     var test_case = 'ZINTERSTORE #516 regression, mixed sets and ziplist zsets';
     client.sadd('one', 100, 101, 102, 103, function (err, res) {
       if (err) {
@@ -2951,7 +3383,7 @@ exports.Zset = (function () {
     });
   }
 
-  tester.zset6 = function (errorCallback) {
+  tester.zset11 = function (errorCallback) {
     var test_case = 'ZREMRANGEBYRANK with WITHSCORES';
     client.del('myzset');
     client.zadd('myzset', 1, 'one', function (err, res) {
@@ -2984,7 +3416,7 @@ exports.Zset = (function () {
 
   }
 
-  tester.zset7 = function (errorCallback) {
+  tester.zset12 = function (errorCallback) {
     var test_case = 'ZREMRANGEBYRANK - Error invalid Floats';
     var res_Array = [];
     client.del('myzset');

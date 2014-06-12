@@ -97,6 +97,7 @@ exports.Bitops = (function () {
     var bin = conv_bits(str);
     return bin.split(/1/g).length - 1;
   }
+
   function simulate_bit_op(op, args) {
     var maxlen = 0;
     var j = 0;
@@ -237,7 +238,7 @@ exports.Bitops = (function () {
   };
 
   tester.Bitops3 = function (errorCallback) {
-    var test_case = 'BITCOUNT fuzzing';
+    var test_case = 'BITCOUNT fuzzing without start/end';
     var str = '',
     bitCnt = 0,
     test_pass = true;
@@ -266,6 +267,51 @@ exports.Bitops = (function () {
       testEmitter.emit('next');
     });
   };
+
+  tester.Bitops3_1 = function (errorCallback) {
+    var test_case = 'BITCOUNT fuzzing with start/end';
+    var str = '',
+    len = 0,
+    start,
+    end,
+    bitCnt,
+    error = false;
+    g.asyncFor(0, 100, function (loop) {
+      str = ut.randstring(0, 3000, 'alpha');
+      client.set('str', str, function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        len = str.length;
+        start = parseInt(ut.randomInt(len) + 1);
+        end = parseInt(ut.randomInt(len) + 1);
+        //if true then swap
+        if (start > end) {
+          start = start + end;
+          end = start - end;
+          start = start - end;
+        }
+        bitCnt = count_bits(str.substring(start, end + 1));
+        client.bitcount('str', start, end, function (err, res) {
+          if (err) {
+            errorCallback(err);
+          }
+          try {
+            if (!assert.equal(bitCnt, res, test_case))
+              loop.next();
+          } catch (e) {
+            error = true;
+            ut.fail(e);
+            loop.break();
+          }
+        })
+      });
+    }, function () {
+      if (!error)
+        ut.pass(test_case);
+      testEmitter.emit('next');
+    })
+  }
 
   tester.Bitops4 = function (errorCallback) {
     var test_case = 'BITCOUNT with start, end';
@@ -337,6 +383,48 @@ exports.Bitops = (function () {
   };
 
   tester.Bitops7 = function (errorCallback) {
+    var test_case = 'BITCOUNT misaligned prefix';
+    client.del('str', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.set('str', 'ab', function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        client.bitcount('str', 1, -1, function (err, res) {
+          if (err) {
+            errorCallback(err);
+          }
+          ut.assertEqual(res, 3, test_case);
+          testEmitter.emit('next');
+        });
+      });
+    });
+  }
+
+  tester.Bitops8 = function (errorCallback) {
+    var test_case = 'BITCOUNT misaligned prefix + full words + remainder';
+    client.del('str', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.set('str', '__PPxxxxxxxxxxxxxxxxRR__', function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        client.bitcount('str', 2, -3, function (err, res) {
+          if (err) {
+            errorCallback(err);
+          }
+          ut.assertEqual(res, 74, test_case);
+          testEmitter.emit('next');
+        });
+      });
+    });
+  }
+
+  tester.Bitops9 = function (errorCallback) {
     var test_case = 'BITOP NOT (empty string)';
     client.set('s', '');
     client.bitop('not', 'dest', 's', function (err, res) {
@@ -353,7 +441,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops8 = function (errorCallback) {
+  tester.Bitops10 = function (errorCallback) {
     var test_case = 'BITOP NOT (known string)';
     client.set('s', '1');
     client.bitop('not', 'dest', 's', function (err, res) {
@@ -370,7 +458,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops9 = function (errorCallback) {
+  tester.Bitops11 = function (errorCallback) {
     var test_case = 'BITOP where dest and target are the same key';
     client.set('s', '1');
     client.bitop('not', 's', 's', function (err, res) {
@@ -387,7 +475,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops10 = function (errorCallback) {
+  tester.Bitops12 = function (errorCallback) {
     var test_case = 'BITOP AND|OR|XOR don\'t change the string with single input key';
     client.set('a', '\x01\x02\xff');
     client.bitop('and', 'res1', 'a', function (err, res) {
@@ -429,7 +517,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops11 = function (errorCallback) {
+  tester.Bitops13 = function (errorCallback) {
     var test_case = 'BITOP missing key is considered a stream of zero';
     client.set('a', '\x01\x02\xff');
     client.bitop('and', 'no-suck-key', 'a', function (err, res) {
@@ -471,7 +559,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops12 = function (errorCallback) {
+  tester.Bitops14 = function (errorCallback) {
     var test_case = 'BITOP shorter keys are zero-padded to the key with max length';
     client.set('a', '\x01\x02\xff\xff');
     client.set('b', '\x01\x02\xff');
@@ -514,7 +602,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops13 = function (errorCallback) {
+  tester.Bitops15 = function (errorCallback) {
     var testArray = ['and', 'or', 'xor'];
     var test_case = '',
     ErrorMsg = '';
@@ -583,7 +671,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops14 = function (errorCallback) {
+  tester.Bitops16 = function (errorCallback) {
     var test_case = 'BITOP NOT fuzzing';
     var str = '',
     result = '',
@@ -633,7 +721,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops15 = function (errorCallback) {
+  tester.Bitops17 = function (errorCallback) {
     var test_case = 'BITOP with integer encoded source objects';
     client.set('a', 1);
     client.set('b', 2);
@@ -651,7 +739,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops16 = function (errorCallback) {
+  tester.Bitops18 = function (errorCallback) {
     var test_case = 'BITOP with non string source key';
     client.del('c');
     client.set('a', 1);
@@ -667,7 +755,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops17 = function (errorCallback) {
+  tester.Bitops19 = function (errorCallback) {
     var test_case = 'BITOP with empty string after non empty string (issue #529)';
     client.flushdb();
     client.set('a', '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00');
@@ -680,7 +768,7 @@ exports.Bitops = (function () {
     });
   };
 
-  tester.Bitops18 = function (errorCallback) {
+  tester.Bitops20 = function (errorCallback) {
     var test_case = "Bitop Command for Keys";
     var res_array = [];
     client.set('foo', 0);
@@ -710,6 +798,524 @@ exports.Bitops = (function () {
     });
   }
 
+  tester.Bitops21 = function (errorCallback) {
+    var test_case = 'BITPOS bit=0 with empty key returns 0';
+    client.del('str', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.bitpos('str', 0, function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        ut.assertEqual(res, 0, test_case);
+        testEmitter.emit('next');
+      });
+    });
+  }
+
+  tester.Bitops22 = function (errorCallback) {
+    var test_case = 'BITPOS bit=1 with empty key returns -1';
+    client.del('str', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.bitpos('str', 1, function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        ut.assertEqual(res, -1, test_case);
+        testEmitter.emit('next');
+      });
+    });
+  }
+
+  tester.Bitops23 = function (errorCallback) {
+    var test_case = 'BITPOS bit=0 with string less than 1 word works';
+    client.set('str', "\xff\xf0\x00", function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.bitpos('str', 0, function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        ut.assertEqual(res, 2, test_case);
+        testEmitter.emit('next');
+      });
+    });
+  }
+
+  tester.Bitops24 = function (errorCallback) {
+    var test_case = 'BITPOS bit=1 with string less than 1 word works';
+    client.set('str', '\x00\x0f\x00', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.bitpos('str', 1, function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        ut.assertEqual(res, 12, test_case);
+        testEmitter.emit('next');
+      });
+    });
+  }
+
+  tester.Bitops25 = function (errorCallback) {
+    var test_case = 'BITPOS bit=0 starting at unaligned address';
+    client.set('str', '\xff\xf0\x00', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.bitpos('str', 0, 1, function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        ut.assertEqual(res, 9, test_case);
+        testEmitter.emit('next');
+      });
+    });
+  }
+
+  tester.Bitops26 = function (errorCallback) {
+    var test_case = 'BITPOS bit=1 starting at unaligned address';
+    client.set('str', '\x00\x0f\xff', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.bitpos('str', 1, 1, function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        ut.assertEqual(res, 12, test_case);
+        testEmitter.emit('next');
+      });
+    });
+  }
+
+  tester.Bitops27 = function (errorCallback) {
+    var test_case = 'BITPOS bit=0 unaligned+full word+reminder';
+    client.del('str', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.set('str', '\xff\xff\xff', function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        //# Prefix Followed by two (or four in 32 bit systems) full words
+        client.append('str', '\xff\xff\xff\xff\xff\xff\xff\xff', function (err, res) {
+          if (err) {
+            errorCallback(err);
+          }
+          client.append('str', '\xff\xff\xff\xff\xff\xff\xff\xff', function (err, res) {
+            if (err) {
+              errorCallback(err);
+            }
+            client.append('str', '\xff\xff\xff\xff\xff\xff\xff\xff', function (err, res) {
+              if (err) {
+                errorCallback(err);
+              }
+              //# First zero bit.
+              client.append('str', '\x0f', function (err, res) {
+                if (err) {
+                  errorCallback(err);
+                }
+                client.bitpos('str', 0, function (err, res0) {
+                  if (err) {
+                    errorCallback(err);
+                  }
+                  client.bitpos('str', 0, 1, function (err, res1) {
+                    if (err) {
+                      errorCallback(err);
+                    }
+                    client.bitpos('str', 0, 2, function (err, res2) {
+                      if (err) {
+                        errorCallback(err);
+                      }
+                      client.bitpos('str', 0, 3, function (err, res3) {
+                        if (err) {
+                          errorCallback(err);
+                        }
+                        client.bitpos('str', 0, 4, function (err, res4) {
+                          if (err) {
+                            errorCallback(err);
+                          }
+                          client.bitpos('str', 0, 5, function (err, res5) {
+                            if (err) {
+                              errorCallback(err);
+                            }
+                            client.bitpos('str', 0, 6, function (err, res6) {
+                              if (err) {
+                                errorCallback(err);
+                              }
+                              client.bitpos('str', 0, 7, function (err, res7) {
+                                if (err) {
+                                  errorCallback(err);
+                                }
+                                client.bitpos('str', 0, 8, function (err, res8) {
+                                  if (err) {
+                                    errorCallback(err);
+                                  }
+                                  ut.assertMany([
+                                      ['equal', res0, 2],
+                                      ['equal', res1, 9],
+                                      ['equal', res2, 18],
+                                      ['equal', res3, 25],
+                                      ['equal', res4, 34],
+                                      ['equal', res5, 41],
+                                      ['equal', res6, 50],
+                                      ['equal', res7, 57],
+                                      ['equal', res8, 66]
+                                    ], test_case);
+                                  testEmitter.emit('next');
+                                });
+                              });
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  }
+
+  tester.Bitops28 = function (errorCallback) {
+    var test_case = 'BITPOS bit=1 unaligned+full word+reminder';
+    client.del('str', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.set('str', '\x00\x00\x00', function (err, res) {
+        if (err) {
+          errorCallback(err);
+        }
+        //# Prefix Followed by two (or four in 32 bit systems) full words
+        client.append('str', '\x00\x00\x00\x00\x00\x00\x00\x00', function (err, res) {
+          if (err) {
+            errorCallback(err);
+          }
+          client.append('str', '\x00\x00\x00\x00\x00\x00\x00\x00', function (err, res) {
+            if (err) {
+              errorCallback(err);
+            }
+            client.append('str', '\x00\x00\x00\x00\x00\x00\x00\x00', function (err, res) {
+              if (err) {
+                errorCallback(err);
+              }
+              //# First zero bit.
+              client.append('str', '\x0f', function (err, res) {
+                if (err) {
+                  errorCallback(err);
+                }
+                client.bitpos('str', 1, function (err, res0) {
+                  if (err) {
+                    errorCallback(err);
+                  }
+                  client.bitpos('str', 1, 1, function (err, res1) {
+                    if (err) {
+                      errorCallback(err);
+                    }
+                    client.bitpos('str', 1, 2, function (err, res2) {
+                      if (err) {
+                        errorCallback(err);
+                      }
+                      client.bitpos('str', 1, 3, function (err, res3) {
+                        if (err) {
+                          errorCallback(err);
+                        }
+                        client.bitpos('str', 1, 4, function (err, res4) {
+                          if (err) {
+                            errorCallback(err);
+                          }
+                          client.bitpos('str', 1, 5, function (err, res5) {
+                            if (err) {
+                              errorCallback(err);
+                            }
+                            client.bitpos('str', 1, 6, function (err, res6) {
+                              if (err) {
+                                errorCallback(err);
+                              }
+                              client.bitpos('str', 1, 7, function (err, res7) {
+                                if (err) {
+                                  errorCallback(err);
+                                }
+                                client.bitpos('str', 1, 8, function (err, res8) {
+                                  if (err) {
+                                    errorCallback(err);
+                                  }
+                                  ut.assertMany([
+                                      ['equal', res0, 220],
+                                      ['equal', res1, 220],
+                                      ['equal', res2, 220],
+                                      ['equal', res3, 220],
+                                      ['equal', res4, 220],
+                                      ['equal', res5, 220],
+                                      ['equal', res6, 220],
+                                      ['equal', res7, 220],
+                                      ['equal', res8, 220]
+                                    ], test_case);
+                                  testEmitter.emit('next');
+                                });
+                              });
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  }
+
+  tester.Bitops29 = function (errorCallback) {
+    var test_case = 'BITPOS bit=1 returns -1 if string is all 0 bits';
+    client.set('str', '', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      var error = false;
+      g.asyncFor(0, 20, function (loop) {
+        client.bitpos('str', 1, function (err, res) {
+          if (err) {
+            errorCallback(err);
+          }
+          try {
+            if (!assert.equal(-1, res, test_case))
+              loop.next();
+          } catch (e) {
+            error = true;
+            ut.fail(e);
+            loop.break();
+          }
+        });
+      }, function () {
+        if (!error)
+          ut.pass(test_case);
+        testEmitter.emit('next');
+      });
+    });
+  }
+
+  tester.Bitops30 = function (errorCallback) {
+    var test_case = 'BITPOS bit=0 works with intervals';
+    client.set('str', '\x00\xff\x00', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.bitpos('str', 0, 0, -1, function (err, res0) {
+        if (err) {
+          errorCallback(err);
+        }
+        client.bitpos('str', 0, 1, -1, function (err, res1) {
+          if (err) {
+            errorCallback(err);
+          }
+          client.bitpos('str', 0, 2, -1, function (err, res2) {
+            if (err) {
+              errorCallback(err);
+            }
+            client.bitpos('str', 0, 2, 200, function (err, res3) {
+              if (err) {
+                errorCallback(err);
+              }
+              client.bitpos('str', 0, 1, 1, function (err, res4) {
+                if (err) {
+                  errorCallback(err);
+                }
+                ut.assertMany([
+                    ['equal', res0, 0],
+                    ['equal', res1, 10],
+                    ['equal', res2, 17],
+                    ['equal', res3, 17],
+                    ['equal', res4, 10]
+                  ], test_case);
+                testEmitter.emit('next');
+              });
+            });
+          });
+        });
+      });
+    });
+  }
+
+  tester.Bitops31 = function (errorCallback) {
+    var test_case = 'BITPOS bit=1 works with intervals';
+    client.set('str', '\x00\xff\x00', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.bitpos('str', 1, 0, -1, function (err, res0) {
+        if (err) {
+          errorCallback(err);
+        }
+        client.bitpos('str', 1, 1, -1, function (err, res1) {
+          if (err) {
+            errorCallback(err);
+          }
+          client.bitpos('str', 1, 2, -1, function (err, res2) {
+            if (err) {
+              errorCallback(err);
+            }
+            client.bitpos('str', 1, 2, 200, function (err, res3) {
+              if (err) {
+                errorCallback(err);
+              }
+              client.bitpos('str', 1, 1, 1, function (err, res4) {
+                if (err) {
+                  errorCallback(err);
+                }
+                ut.assertMany([
+                    ['equal', res0, 8],
+                    ['equal', res1, 8],
+                    ['equal', res2, 16],
+                    ['equal', res3, 16],
+                    ['equal', res4, 8]
+                  ], test_case);
+                testEmitter.emit('next');
+              });
+            });
+          });
+        });
+      });
+    });
+  }
+
+  tester.Bitops32 = function (errorCallback) {
+    var test_case = 'BITPOS bit=0 changes behavior if end is given';
+    client.set('str', '\xff\xff\xff', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      client.bitpos('str', 0, function (err, res0) {
+        if (err) {
+          errorCallback(err);
+        }
+        client.bitpos('str', 0, 0, function (err, res1) {
+          if (err) {
+            errorCallback(err);
+          }
+          client.bitpos('str', 0, 0, -1, function (err, res2) {
+            if (err) {
+              errorCallback(err);
+            }
+            ut.assertMany([
+                ['equal', res0, 2],
+                ['equal', res1, 2],
+                ['equal', res2, 2]
+              ], test_case);
+            testEmitter.emit('next');
+          });
+        });
+      });
+    });
+  }
+
+  tester.Bitops33 = function (errorCallback) {
+    var test_case = 'BITPOS bit=1 fuzzy testing using SETBIT';
+    client.del('str', function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      var max = 524288; //64k
+      var first_one_pos = -1,
+      pos = 0;
+      var error = false;
+      g.asyncFor(0, 1000, function (loop) {
+        client.bitpos('str', 1, function (err, res) {
+          if (err) {
+            errorCallback(err);
+          }
+          try {
+            if (!assert.equal(res, first_one_pos, test_case)) {
+              pos = parseInt(g.randomInt(max));
+              client.setbit('str', pos, 1, function (err, res) {
+                if (err) {
+                  errorCallback(err);
+                }
+                if ((first_one_pos == -1) || (first_one_pos > pos)) {
+                  //# Update the position of the first 1 bit in the array
+                  //# if the bit we set is on the left of the previous one.
+                  first_one_pos = pos;
+                }
+                loop.next();
+              });
+            }
+          } catch (e) {
+            error = true;
+            ut.fail(e);
+            loop.break();
+          }
+        });
+      }, function () {
+        if (!error)
+          ut.pass(test_case);
+        testEmitter.emit('next');
+      });
+    });
+  }
+
+  tester.Bitops34 = function (errorCallback) {
+    var test_case = 'BITPOS bit=0 fuzzy testing using SETBIT';
+    var max = 524288; //64k
+    var first_one_pos = -1,
+    pos = 0,
+    error = false,
+    str = '';
+    var expr = parseInt(max / 8);
+    for (var i = 0; i < expr; i++)
+      str += '\xff';
+
+    client.set('str', str, function (err, res) {
+      if (err) {
+        errorCallback(err);
+      }
+      g.asyncFor(0, 1000, function (loop) {
+        client.bitpos('str', 0, function (err, res) {
+          if (err) {
+            errorCallback(err);
+          }
+          try {
+            if (!assert.equal(res, 2, test_case)) {
+              pos = parseInt(g.randomInt(max));
+              client.setbit('str', pos, 0, function (err, res) {
+                if (err) {
+                  errorCallback(err);
+                }
+                if ((first_one_pos > pos)) {
+                  //# Update the position of the first 1 bit in the array
+                  //# if the bit we set is on the left of the previous one.
+                  first_one_pos = pos;
+                }
+                loop.next();
+              });
+            }
+          } catch (e) {
+            error = true;
+            ut.fail(e);
+            loop.break();
+          }
+        });
+      }, function () {
+        if (!error)
+          ut.pass(test_case);
+        testEmitter.emit('next');
+      });
+    });
+  }
+  
   return bitops;
 }
   ());

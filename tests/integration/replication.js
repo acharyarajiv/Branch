@@ -115,11 +115,12 @@ exports.Replication = (function () {
         });
         var tags = 'repl-mr12';
         var overrides = {};
-        overrides['maxheap'] = '1gb';
+        overrides['maxheap'] = '512mb';
         var args = {};
         args['tags'] = tags;
         args['name'] = name + '(Slave0)';
         args['overrides'] = overrides;
+		setTimeout(function(){
         server5.start_server(client_pid, args, function (err, res) {
           if (err) {
             errorCallback(err, null);
@@ -146,6 +147,7 @@ exports.Replication = (function () {
             });
           });
         });
+		},1000);
       }, 100);
     });
     function kill_server(callback) {
